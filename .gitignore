@@ -1,0 +1,11 @@
+#Ignore All Pycache
+/__pycache__
+/cogs/__pycache__
+
+#Ignore All Logs
+*.log
+
+#Ignore Secrets
+*.env
+.env
+*.json
