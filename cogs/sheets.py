@@ -1,6 +1,4 @@
-import discord
 from discord.ext import commands
-from discord import app_commands
 from googleapiclient.discovery import build
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
