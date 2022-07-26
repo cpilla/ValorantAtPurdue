@@ -8,7 +8,7 @@ class Tryouts(commands.Cog):
     @commands.command()
     async def spawn(self, ctx):
         embed = discord.Embed(title = "Click here to register for tryouts!", color = 0xdaaa00)
-        view = RegistrationMenu()
+        view = RegistrationMenu(self.bot)
         if self.bot.regMessage == None:
             messages = [message async for message in ctx.message.channel.history(limit=100)]
             await ctx.message.channel.delete_messages(messages)
@@ -16,12 +16,13 @@ class Tryouts(commands.Cog):
 
 
 class RegistrationMenu(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot):
         super().__init__(timeout = None)
+        self.bot = bot
 
     @discord.ui.button(label="Register!", style=discord.ButtonStyle.green, custom_id="Register Button")
     async def reg_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RankDropdownMenu()
+        view = RankDropdownMenu(self.bot)
         embed = discord.Embed(title = f'Select your current or previous act rank below.', color = discord.Colour.green())
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         await view.wait()
@@ -50,10 +51,11 @@ class RegistrationMenu(discord.ui.View):
         await interaction.response.defer()
 
 class RankDropdownMenu(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot):
         self.rank = None
         self.name = None
         super().__init__()
+        self.bot = bot
             
     selectOptions = [
         discord.SelectOption(label="Iron"),
@@ -75,17 +77,18 @@ class RankDropdownMenu(discord.ui.View):
     async def test_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         self.name = interaction.user.name
         self.rank = select.values[0]
-        view = RollDropdownMenu(self.name, self.rank)
+        view = RollDropdownMenu(self.name, self.rank, self.bot)
         embed = discord.Embed(title = f'Select your main role here. \nOnly select two if you are EXTREMELY proficent in another.', color = discord.Colour.green())
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         await view.wait()
         self.stop()
         
 class RollDropdownMenu(discord.ui.View):
-    def __init__(self, name, rank):
+    def __init__(self, name, rank, bot):
         self.name = name
         self.rank = rank
         self.roles = []
+        self.bot = bot
         super().__init__()
             
     selectOptions = [
@@ -130,4 +133,4 @@ class RollDropdownMenu(discord.ui.View):
 
 async def setup(bot):
     await bot.add_cog(Tryouts(bot))
-    bot.add_view(RegistrationMenu())
+    bot.add_view(RegistrationMenu(bot))
