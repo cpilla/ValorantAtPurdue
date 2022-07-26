@@ -11,9 +11,8 @@ class MyBot(commands.Bot):
             'cogs.utils',
             'cogs.sheets',
             'cogs.tryouts',
+            'cogs.teams',
         ]
-        self.sheet = None
-        self.regMessage = None
     async def setup_hook(self):
         print(f"Logging in as: {self.user}")
         for ext in self.initial_extensions:
@@ -21,6 +20,10 @@ class MyBot(commands.Bot):
         print(self.cogs)
 
 bot = MyBot()
+
+@bot.command()
+async def test(ctx):
+    await ctx.send(bot.test)
 
 load_dotenv()
 botKey = os.getenv("BOT_KEY")
