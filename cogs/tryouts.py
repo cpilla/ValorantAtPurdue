@@ -1,11 +1,18 @@
 import discord
 from discord.ext import commands
+import cogs.sheets as sheets
+
 
 class Tryouts(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.regMessage = None
-
+        bot.tryoutsSheet = sheets.get_sheet(bot, "Tryouts")
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        #Basically run spawn command
+        return
     
     @commands.command()
     async def spawn(self, ctx):
@@ -32,15 +39,15 @@ class RegistrationMenu(discord.ui.View):
     @discord.ui.button(label="Un-Register!", style=discord.ButtonStyle.red, custom_id="Un-Register Button")
     async def unreg_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         removed = False
-        for name in self.bot.sheet.col_values(1):
+        for name in self.bot.tryoutsSheet.col_values(1):
             if name == interaction.user.name:
                 removed = True
-                embed = discord.Embed(title = f'{self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 1).value} ' + 
-                                    f'is no longer registered as: {self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 2).value} ' +
-                                    f'for: {self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 3).value}', 
+                embed = discord.Embed(title = f'{self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 1).value} ' + 
+                                    f'is no longer registered as: {self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 2).value} ' +
+                                    f'for: {self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3).value}', 
                                     color = discord.Colour.red())
                 await interaction.user.send(embed=embed)
-                self.bot.sheet.delete_rows(self.bot.sheet.col_values(1).index(name) + 1)
+                self.bot.tryoutsSheet.delete_rows(self.bot.tryoutsSheet.col_values(1).index(name) + 1)
                 
         if not removed:
             embed = discord.Embed(title = f'{interaction.user.name} is not registered.', color = discord.Colour.yellow())
@@ -116,12 +123,12 @@ class RollDropdownMenu(discord.ui.View):
 
         inSheet = False
 
-        for name in self.bot.sheet.col_values(1):
+        for name in self.bot.tryoutsSheet.col_values(1):
             if name == self.name:
                 inSheet = True
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 2, self.rank)
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 3, self.roles)
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 4, prospect)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 2, self.rank)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3, self.roles)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 4, prospect)
         if not inSheet:
             self.bot.sheet.append_row([self.name, self.rank, self.roles, prospect])
 

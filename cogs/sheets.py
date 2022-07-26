@@ -6,7 +6,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 class Sheets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
         print("Initializing Google Authentication...")
         scope = ["https://spreadsheets.google.com/feeds",
                 'https://www.googleapis.com/auth/spreadsheets',
@@ -15,8 +14,14 @@ class Sheets(commands.Cog):
         creds = ServiceAccountCredentials.from_json_keyfile_name("sheet-user.json", scope)
         client = gspread.authorize(creds)
         bot.client = client
-        sheet = client.open("Tryouts2022").sheet1  # Open the spreadhseet
+        sheet = client.open("Tryouts2022")  # Open the spreadhseet
         bot.sheet = sheet
+
+def get_sheet(bot, sheetName):
+    return bot.sheet.worksheet(sheetName)
+
+def get_data_from_nf(worksheet, nf):
+    return worksheet.get_values(nf, value_render_option='UNFORMATTED_VALUE')
 
 async def setup(bot):
     await bot.add_cog(Sheets(bot))
