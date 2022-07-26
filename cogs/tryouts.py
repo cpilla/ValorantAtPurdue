@@ -4,6 +4,8 @@ from discord.ext import commands
 class Tryouts(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        bot.regMessage = None
+
     
     @commands.command()
     async def spawn(self, ctx):
