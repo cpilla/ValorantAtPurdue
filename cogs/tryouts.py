@@ -1,11 +1,19 @@
 import discord
 from discord.ext import commands
+import cogs.sheets as sheets
+
 
 class Tryouts(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.regMessage = None
-
+        bot.tryoutsSheet = sheets.get_sheet(bot, "Tryouts")
+        bot.backupSheet = sheets.get_sheet(bot, "test")
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        #Basically run spawn command
+        return
     
     @commands.command()
     async def spawn(self, ctx):
@@ -13,8 +21,15 @@ class Tryouts(commands.Cog):
         view = RegistrationMenu(self.bot)
         if self.bot.regMessage == None:
             messages = [message async for message in ctx.message.channel.history(limit=100)]
-            await ctx.message.channel.delete_messages(messages)
+            try:
+                await ctx.message.channel.delete_messages(messages)
+            except:
+                pass
             self.bot.regMessage = await ctx.send(embed=embed, view=view)
+    
+    @commands.command()
+    async def reorg(self, ctx):
+        reorg_sheet(self.bot.tryoutsSheet)
 
 
 class RegistrationMenu(discord.ui.View):
@@ -32,15 +47,16 @@ class RegistrationMenu(discord.ui.View):
     @discord.ui.button(label="Un-Register!", style=discord.ButtonStyle.red, custom_id="Un-Register Button")
     async def unreg_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         removed = False
-        for name in self.bot.sheet.col_values(1):
+        for name in self.bot.tryoutsSheet.col_values(1):
             if name == interaction.user.name:
                 removed = True
-                embed = discord.Embed(title = f'{self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 1).value} ' + 
-                                    f'is no longer registered as: {self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 2).value} ' +
-                                    f'for: {self.bot.sheet.cell(self.bot.sheet.col_values(1).index(name) + 1, 3).value}', 
+                embed = discord.Embed(title = f'{self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 1).value} ' + 
+                                    f'is no longer registered as: {self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 2).value} ' +
+                                    f'for: {self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3).value}', 
                                     color = discord.Colour.red())
                 await interaction.user.send(embed=embed)
-                self.bot.sheet.delete_rows(self.bot.sheet.col_values(1).index(name) + 1)
+                self.bot.backupSheet.delete_rows(self.bot.backupSheet.col_values(1).index(name) + 1)
+                self.bot.tryoutsSheet.delete_rows(self.bot.tryoutsSheet.col_values(1).index(name) + 1)
                 
         if not removed:
             embed = discord.Embed(title = f'{interaction.user.name} is not registered.', color = discord.Colour.yellow())
@@ -116,14 +132,19 @@ class RollDropdownMenu(discord.ui.View):
 
         inSheet = False
 
-        for name in self.bot.sheet.col_values(1):
+        for name in self.bot.tryoutsSheet.col_values(1):
             if name == self.name:
                 inSheet = True
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 2, self.rank)
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 3, self.roles)
-                self.bot.sheet.update_cell(self.bot.sheet.col_values(1).index(name) + 1, 4, prospect)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 2, self.rank)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3, self.roles)
+                self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 4, prospect)
+
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 2, self.rank)
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 3, self.roles)
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 4, prospect)
         if not inSheet:
-            self.bot.sheet.append_row([self.name, self.rank, self.roles, prospect])
+            self.bot.tryoutsSheet.append_row([self.name, self.rank, self.roles, prospect])
+            self.bot.backupSheet.append_row([self.name, self.rank, self.roles, prospect])
 
         embed = discord.Embed(title = f'{self.name} has registered as: {self.rank} for: {self.roles}', color = discord.Colour.green())
         await interaction.user.send(embed=embed)
@@ -131,6 +152,39 @@ class RollDropdownMenu(discord.ui.View):
         if tryoutRole not in interaction.user.roles:
             await interaction.user.add_roles(tryoutRole)
         await interaction.response.defer()
+
+def reorg_sheet(sheet):
+    gold = [[]]
+    black = [[]]
+    gw = [[]]
+    index = 0
+
+    for team in sheet.col_values(4):
+        index = index + 1
+        
+        if team == "Gold":
+            if gold[0] == []:
+                gold[0] = sheet.row_values(index)
+            else:
+                gold.append(sheet.row_values(index))
+        elif team == "Black":
+            if black[0] == []:
+                black[0] = sheet.row_values(index)
+            else:
+                black.append(sheet.row_values(index))
+        elif team == "Gray/White":
+            if gw[0] == []:
+                gw[0] = sheet.row_values(index)
+            else:
+                gw.append(sheet.row_values(index))
+    for player in black:
+        gold.append(player)
+    for player in gw:
+        gold.append(player)
+
+    sheet.batch_update([{'range' : "A2:D100", 'values': gold}])
+    print("did")
+
 
 
 async def setup(bot):
