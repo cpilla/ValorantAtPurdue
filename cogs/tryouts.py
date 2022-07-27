@@ -22,6 +22,10 @@ class Tryouts(commands.Cog):
             messages = [message async for message in ctx.message.channel.history(limit=100)]
             await ctx.message.channel.delete_messages(messages)
             self.bot.regMessage = await ctx.send(embed=embed, view=view)
+    
+    @commands.command()
+    async def reorg(self, ctx):
+        reorg_sheet(self.bot.tryoutsSheet, sheets.get_sheet(self.bot, "test"))
 
 
 class RegistrationMenu(discord.ui.View):
@@ -130,7 +134,7 @@ class RollDropdownMenu(discord.ui.View):
                 self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3, self.roles)
                 self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 4, prospect)
         if not inSheet:
-            self.bot.sheet.append_row([self.name, self.rank, self.roles, prospect])
+            self.bot.tryoutsSheet.append_row([self.name, self.rank, self.roles, prospect])
 
         embed = discord.Embed(title = f'{self.name} has registered as: {self.rank} for: {self.roles}', color = discord.Colour.green())
         await interaction.user.send(embed=embed)
@@ -138,6 +142,39 @@ class RollDropdownMenu(discord.ui.View):
         if tryoutRole not in interaction.user.roles:
             await interaction.user.add_roles(tryoutRole)
         await interaction.response.defer()
+
+def reorg_sheet(sheet):
+    gold = [[]]
+    black = [[]]
+    gw = [[]]
+    index = 0
+
+    for team in sheet.col_values(4):
+        index = index + 1
+        
+        if team == "Gold":
+            if gold[0] == []:
+                gold[0] = sheet.row_values(index)
+            else:
+                gold.append(sheet.row_values(index))
+        elif team == "Black":
+            if black[0] == []:
+                black[0] = sheet.row_values(index)
+            else:
+                black.append(sheet.row_values(index))
+        elif team == "Gray/White":
+            if gw[0] == []:
+                gw[0] = sheet.row_values(index)
+            else:
+                gw.append(sheet.row_values(index))
+    for player in black:
+        gold.append(player)
+    for player in gw:
+        gold.append(player)
+
+    sheet.batch_update([{'range' : "A2:D100", 'values': gold}])
+    print("did")
+
 
 
 async def setup(bot):
