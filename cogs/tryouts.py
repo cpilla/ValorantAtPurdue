@@ -8,6 +8,7 @@ class Tryouts(commands.Cog):
         self.bot = bot
         bot.regMessage = None
         bot.tryoutsSheet = sheets.get_sheet(bot, "Tryouts")
+        bot.backupSheet = sheets.get_sheet(bot, "test")
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -20,12 +21,15 @@ class Tryouts(commands.Cog):
         view = RegistrationMenu(self.bot)
         if self.bot.regMessage == None:
             messages = [message async for message in ctx.message.channel.history(limit=100)]
-            await ctx.message.channel.delete_messages(messages)
+            try:
+                await ctx.message.channel.delete_messages(messages)
+            except:
+                pass
             self.bot.regMessage = await ctx.send(embed=embed, view=view)
     
     @commands.command()
     async def reorg(self, ctx):
-        reorg_sheet(self.bot.tryoutsSheet, sheets.get_sheet(self.bot, "test"))
+        reorg_sheet(self.bot.tryoutsSheet)
 
 
 class RegistrationMenu(discord.ui.View):
@@ -51,6 +55,7 @@ class RegistrationMenu(discord.ui.View):
                                     f'for: {self.bot.tryoutsSheet.cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3).value}', 
                                     color = discord.Colour.red())
                 await interaction.user.send(embed=embed)
+                self.bot.backupSheet.delete_rows(self.bot.backupSheet.col_values(1).index(name) + 1)
                 self.bot.tryoutsSheet.delete_rows(self.bot.tryoutsSheet.col_values(1).index(name) + 1)
                 
         if not removed:
@@ -133,8 +138,13 @@ class RollDropdownMenu(discord.ui.View):
                 self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 2, self.rank)
                 self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 3, self.roles)
                 self.bot.tryoutsSheet.update_cell(self.bot.tryoutsSheet.col_values(1).index(name) + 1, 4, prospect)
+
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 2, self.rank)
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 3, self.roles)
+                self.bot.backupSheet.update_cell(self.bot.backupSheet.col_values(1).index(name) + 1, 4, prospect)
         if not inSheet:
             self.bot.tryoutsSheet.append_row([self.name, self.rank, self.roles, prospect])
+            self.bot.backupSheet.append_row([self.name, self.rank, self.roles, prospect])
 
         embed = discord.Embed(title = f'{self.name} has registered as: {self.rank} for: {self.roles}', color = discord.Colour.green())
         await interaction.user.send(embed=embed)
